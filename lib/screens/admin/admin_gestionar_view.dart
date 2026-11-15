@@ -13,7 +13,7 @@ class _AdminGestionarViewState extends State<AdminGestionarView> {
   final AuthService _authService = AuthService();
   List<Map<String, dynamic>> _reservas = [];
   bool _cargando = true;
-  final Set<dynamic> _procesandoIds = {};
+  String _filtroEstado = 'Todas';
 
   @override
   void initState() {
@@ -32,256 +32,358 @@ class _AdminGestionarViewState extends State<AdminGestionarView> {
     }
   }
 
-  // Cambiar estado a 'reservado' o 'rechazado'
-  Future<void> _cambiarEstado(dynamic reservaId, String nuevoEstado) async {
-    setState(() => _procesandoIds.add(reservaId));
-
-    final respuesta = await _authService.actualizarEstadoReserva(
-      reservaId: reservaId,
-      nuevoEstado: nuevoEstado,
-    );
-
-    setState(() => _procesandoIds.remove(reservaId));
-
-    if (!mounted) return;
-
-    if (respuesta['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'Estado actualizado a $nuevoEstado'),
-          backgroundColor: nuevoEstado == 'reservado' ? AppTheme.success : AppTheme.danger,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      // Recargar lista de reservas
-      _cargarReservas();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'Error al actualizar estado'),
-          backgroundColor: AppTheme.danger,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+  List<Map<String, dynamic>> get _reservasFiltradas {
+    if (_filtroEstado == 'Todas') return _reservas;
+    return _reservas.where((r) {
+      final estado = (r['estado'] ?? '').toString().toLowerCase();
+      if (_filtroEstado == 'Confirmadas') {
+        return estado == 'confirmada' || estado == 'reservado';
+      }
+      if (_filtroEstado == 'Lista de Espera') {
+        return estado == 'en_espera' || estado == 'pendiente';
+      }
+      if (_filtroEstado == 'Canceladas') {
+        return estado == 'cancelada' || estado == 'rechazado';
+      }
+      return true;
+    }).toList();
   }
 
-  Color _colorPorEstado(String estado) {
-    switch (estado.toLowerCase()) {
-      case 'reservado':
-      case 'confirmada':
-        return AppTheme.success; // Verde
-      case 'rechazado':
-      case 'cancelada':
-        return AppTheme.danger; // Rojo
-      case 'pendiente':
-        return AppTheme.warning; // Naranja
-      default:
-        return AppTheme.textSecondary;
+  Future<void> _cancelarReservaAdmin(dynamic reservaId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Cancelar reserva?'),
+        content: const Text(
+          'Esta acción liberará la pista. Si hay usuarios en lista de espera, se asignará automáticamente al siguiente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Volver'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final res = await _authService.cancelarReserva(reservaId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['mensaje'] ?? 'Reserva cancelada'),
+            backgroundColor: AppTheme.accent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _cargarReservas();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final filtradas = _reservasFiltradas;
+    final totalConfirmadas = _reservas.where((r) {
+      final e = (r['estado'] ?? '').toString().toLowerCase();
+      return e == 'confirmada' || e == 'reservado';
+    }).length;
+    final totalEspera = _reservas.where((r) {
+      final e = (r['estado'] ?? '').toString().toLowerCase();
+      return e == 'en_espera' || e == 'pendiente';
+    }).length;
+
     return RefreshIndicator(
+      color: AppTheme.accent,
       onRefresh: _cargarReservas,
-      child: _cargando
-          ? const Center(child: CircularProgressIndicator())
-          : _reservas.isEmpty
-              ? Center(
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.calendar_month_outlined, size: 56, color: AppTheme.textMuted),
-                        SizedBox(height: 16),
-                        Text(
-                          'No hay reservas registradas',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Cuando los usuarios reserven desde la aplicación aparecerán aquí.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                        ),
-                      ],
-                    ),
+      child: Column(
+        children: [
+          // Barra de filtros por estado
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: Colors.white,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('Todas', _reservas.length, AppTheme.primary),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Confirmadas', totalConfirmadas, AppTheme.success),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Lista de Espera', totalEspera, AppTheme.warning),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    'Canceladas',
+                    _reservas.length - totalConfirmadas - totalEspera,
+                    AppTheme.danger,
                   ),
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  itemCount: _reservas.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final r = _reservas[index];
-                    final reservaId = r['id'];
-                    final lugar = r['espacio_nombre'] ?? 'Espacio #${r['evento_id'] ?? r['espacio_id']}';
-                    final usuario = r['usuario_nombre'] ?? r['usuario_email'] ?? 'Usuario #${r['usuario_id']}';
-                    final fecha = (r['fecha'] ?? r['fecha_inicio'] ?? '').toString().split('T').first;
-                    final franja = r['franja_horaria'] ?? '';
-                    final estado = (r['estado'] ?? 'pendiente').toString();
-                    final colorEstado = _colorPorEstado(estado);
-                    final estaProcesando = _procesandoIds.contains(reservaId);
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1, color: AppTheme.border),
 
-                    return Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(color: AppTheme.border),
-                      ),
-                      child: Padding(
+          // Lista de reservas
+          Expanded(
+            child: _cargando
+                ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+                : filtradas.isEmpty
+                    ? Center(
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceSubtle,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.event_available_rounded,
+                                  size: 48,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _filtroEstado == 'Todas'
+                                    ? 'No hay reservas registradas'
+                                    : 'No hay reservas en "$_filtroEstado"',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Las reservas confirmadas directamente y listas de espera aparecerán aquí.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Fila de encabezado: Espacio y Etiqueta de Estado
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    lugar,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: colorEstado.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    estado.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorEstado,
-                                    ),
-                                  ),
+                        itemCount: filtradas.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final r = filtradas[index];
+                          final reservaId = r['id'];
+                          final lugar = r['espacio_nombre'] ?? 'Pista / Espacio #${r['evento_id'] ?? r['espacio_id']}';
+                          final usuario = r['usuario_nombre'] ?? r['usuario_email'] ?? 'Socio #${r['usuario_id']}';
+                          final email = r['usuario_email'] ?? '';
+                          final fecha = (r['fecha'] ?? r['fecha_inicio'] ?? '').toString().split('T').first;
+                          final franja = r['franja_horaria'] ?? '09:00 - 10:30';
+                          final estado = (r['estado'] ?? 'confirmada').toString().toLowerCase();
+
+                          Color statusColor = AppTheme.success;
+                          Color statusBg = const Color(0xFFDCFCE7);
+                          String statusText = 'CONFIRMADA';
+                          IconData statusIcon = Icons.check_circle_rounded;
+
+                          if (estado == 'en_espera' || estado == 'pendiente') {
+                            statusColor = AppTheme.warning;
+                            statusBg = const Color(0xFFFEF3C7);
+                            statusText = 'EN LISTA DE ESPERA';
+                            statusIcon = Icons.hourglass_top_rounded;
+                          } else if (estado == 'cancelada' || estado == 'rechazado') {
+                            statusColor = AppTheme.danger;
+                            statusBg = const Color(0xFFFEE2E2);
+                            statusText = 'CANCELADA';
+                            statusIcon = Icons.cancel_outlined;
+                          }
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: AppTheme.border, width: 1.2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            Text('Solicitado por: $usuario', style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
-                            const SizedBox(height: 8),
-
-                            // Fecha y hora
-                            Row(
-                              children: [
-                                const Icon(Icons.date_range_rounded, size: 15, color: AppTheme.textMuted),
-                                const SizedBox(width: 5),
-                                Text(fecha, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500)),
-                                if (franja.isNotEmpty) ...[
-                                  const SizedBox(width: 14),
-                                  const Icon(Icons.access_time_rounded, size: 15, color: AppTheme.textMuted),
-                                  const SizedBox(width: 4),
-                                  Text(franja, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary, fontWeight: FontWeight.w500)),
-                                ],
-                              ],
-                            ),
-
-                            const SizedBox(height: 14),
-                            const Divider(height: 1, color: AppTheme.border),
-                            const SizedBox(height: 12),
-
-                            // BOTONES DE ACEPTAR Y RECHAZAR
-                            if (estaProcesando)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6),
-                                  child: SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                ),
-                              )
-                            else
-                              Row(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Botón Rechazar (Neutro, sobrio con sutil toque muted)
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 38,
-                                      child: OutlinedButton(
-                                        onPressed: () => _cambiarEstado(reservaId, 'rechazado'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppTheme.textSecondary,
-                                          backgroundColor: Colors.transparent,
-                                          side: const BorderSide(color: AppTheme.border, width: 1.2),
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          lugar,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            color: AppTheme.textPrimary,
+                                            letterSpacing: -0.3,
                                           ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        child: const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: statusBg,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.close_rounded, size: 15, color: AppTheme.textSecondary),
-                                            SizedBox(width: 6),
+                                            Icon(statusIcon, color: statusColor, size: 12),
+                                            const SizedBox(width: 4),
                                             Text(
-                                              'Rechazar',
+                                              statusText,
                                               style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppTheme.textSecondary,
-                                                letterSpacing: -0.2,
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: statusColor,
+                                                letterSpacing: 0.4,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 10),
-                                  // Botón Aceptar (Elegante Slate/Dark Primary)
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 38,
-                                      child: ElevatedButton(
-                                        onPressed: () => _cambiarEstado(reservaId, 'reservado'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.primary,
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person_outline_rounded, size: 14, color: AppTheme.textSecondary),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          '$usuario ($email)',
+                                          style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.surfaceSubtle,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_rounded, size: 14, color: AppTheme.electricBlue),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          fecha,
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.textPrimary,
                                           ),
                                         ),
-                                        child: const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.check_rounded, size: 15, color: Colors.white),
-                                            SizedBox(width: 6),
-                                            Text(
-                                              'Aprobar',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.white,
-                                                letterSpacing: -0.2,
-                                              ),
-                                            ),
-                                          ],
+                                        const Spacer(),
+                                        const Icon(Icons.schedule_rounded, size: 14, color: AppTheme.textSecondary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          franja,
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (estado != 'cancelada' && estado != 'rechazado') ...[
+                                    const SizedBox(height: 10),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton.icon(
+                                        onPressed: () => _cancelarReservaAdmin(reservaId),
+                                        icon: const Icon(Icons.cancel_outlined, size: 15, color: AppTheme.danger),
+                                        label: const Text(
+                                          'Cancelar Reserva',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.danger,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
-                          ],
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, int count, Color color) {
+    final bool isSelected = _filtroEstado == label;
+    return GestureDetector(
+      onTap: () => setState(() => _filtroEstado = label),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? color : AppTheme.surfaceSubtle,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? color : AppTheme.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppTheme.textPrimary,
+                fontSize: 12.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

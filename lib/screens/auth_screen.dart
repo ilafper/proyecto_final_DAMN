@@ -1,10 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/bbdd_service.dart';
 import 'admin_screen.dart';
 import 'user_screen.dart';
 
-// vista de login y registro
 enum AuthMode { login, register }
 
 class AuthScreen extends StatefulWidget {
@@ -16,7 +15,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   AuthMode _authMode = AuthMode.login;
-
   final AuthService _authService = AuthService();
 
   // Controllers para Login
@@ -68,12 +66,12 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('¡Bienvenido, ${usuario['nombre'] ?? usuario['nombre_completo'] ?? usuario['email']}!'),
-          backgroundColor: AppTheme.primary,
+          backgroundColor: AppTheme.accent,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
 
-      // Redirigir según el rol recibido del backend
       if (rol == 'admin') {
         Navigator.pushReplacement(
           context,
@@ -93,8 +91,9 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(respuesta['mensaje'] ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.danger,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -118,13 +117,13 @@ class _AuthScreenState extends State<AuthScreen> {
     if (respuesta['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'Cuenta de usuario creada exitosamente'),
-          backgroundColor: const Color(0xFF059669),
+          content: Text(respuesta['mensaje'] ?? 'Cuenta deportiva creada con éxito'),
+          backgroundColor: AppTheme.accent,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
 
-      // Cambiamos a pestaña de login y rellenamos los datos
       setState(() {
         _authMode = AuthMode.login;
         _loginEmailController.text = _regEmailController.text.trim();
@@ -133,9 +132,10 @@ class _AuthScreenState extends State<AuthScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'Error al crear la cuenta'),
-          backgroundColor: Colors.red,
+          content: Text(respuesta['mensaje'] ?? 'Error al registrarte'),
+          backgroundColor: AppTheme.danger,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -144,27 +144,23 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Logo sobrio y encabezado
                   _buildBrandHeader(),
-                  const SizedBox(height: 32),
-
-                  // 2. Selector sobrio de pestaña (Iniciar Sesión / Registrarse)
-                  _buildSegmentedSwitch(),
                   const SizedBox(height: 28),
-
-                  // 3. Formulario activo con animación de desvanecimiento
+                  _buildSegmentedSwitch(),
+                  const SizedBox(height: 24),
                   AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 250),
+                    duration: const Duration(milliseconds: 200),
                     crossFadeState: _authMode == AuthMode.login
                         ? CrossFadeState.showFirst
                         : CrossFadeState.showSecond,
@@ -180,58 +176,66 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // Header de la marca
   Widget _buildBrandHeader() {
     return Column(
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
-            color: AppTheme.primary,
-            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.15),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.domain_rounded,
-            color: Colors.white,
-            size: 28,
+          child: const Center(
+            child: Icon(
+              Icons.bolt_rounded,
+              color: AppTheme.voltNeon,
+              size: 34,
+            ),
           ),
         ),
         const SizedBox(height: 18),
-        Text(
-          'ESPACIOS',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
+        const Text(
+          'PLAY & BOOK',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.0,
+            color: AppTheme.textPrimary,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
           _authMode == AuthMode.login
-              ? 'Introduce tus credenciales para acceder'
-              : 'Completa los datos para registrarte',
+              ? 'Pistas deportivas, locales para eventos, terrazas y más'
+              : 'Crea tu perfil y reserva espacios en segundos',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
-  // Switch de pestañas
   Widget _buildSegmentedSwitch() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: AppTheme.surfaceSubtle,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.border),
       ),
@@ -275,7 +279,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ? [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 6,
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -286,7 +290,7 @@ class _AuthScreenState extends State<AuthScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
           ),
         ),
@@ -294,29 +298,23 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // Formulario de Login
   Widget _buildLoginForm() {
     return Form(
       key: _loginFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 10),
           TextFormField(
             controller: _loginEmailController,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               labelText: 'Correo electrónico',
               hintText: 'ejemplo@correo.com',
-              prefixIcon: Icon(Icons.mail_outline_rounded, size: 20, color: AppTheme.textMuted),
+              prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Introduce tu correo';
-              }
-              if (!value.contains('@') || !value.contains('.')) {
-                return 'Correo no válido';
-              }
+              if (value == null || value.trim().isEmpty) return 'Introduce tu correo';
+              if (!value.contains('@') || !value.contains('.')) return 'Correo no válido';
               return null;
             },
           ),
@@ -326,12 +324,11 @@ class _AuthScreenState extends State<AuthScreen> {
             obscureText: _obscureLoginPassword,
             decoration: InputDecoration(
               labelText: 'Contraseña',
-              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: AppTheme.textMuted),
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureLoginPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   size: 20,
-                  color: AppTheme.textMuted,
                 ),
                 onPressed: () {
                   setState(() => _obscureLoginPassword = !_obscureLoginPassword);
@@ -339,21 +336,20 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Introduce tu contraseña';
-              }
+              if (value == null || value.isEmpty) return 'Introduce tu contraseña';
               return null;
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Se enviará un correo para restablecer la contraseña'),
+                  SnackBar(
+                    content: const Text('Contacta con el club para recuperar tu acceso'),
                     behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 );
               },
@@ -365,39 +361,48 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               child: const Text(
                 '¿Olvidaste tu contraseña?',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _submitLogin,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('Iniciar Sesión'),
+          const SizedBox(height: 22),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submitLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text(
+                      'Entrar a la Pista',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Formulario de Registro
   Widget _buildRegisterForm() {
     return Form(
       key: _registerFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 10),
           TextFormField(
             controller: _regNameController,
             decoration: const InputDecoration(
-              labelText: 'Nombre completo',
-              prefixIcon: Icon(Icons.person_outline_rounded, size: 20, color: AppTheme.textMuted),
+              labelText: 'Nombre y apellidos',
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
             ),
             validator: (value) =>
                 value == null || value.trim().isEmpty ? 'Introduce tu nombre' : null,
@@ -409,7 +414,7 @@ class _AuthScreenState extends State<AuthScreen> {
             decoration: const InputDecoration(
               labelText: 'Correo electrónico',
               hintText: 'ejemplo@correo.com',
-              prefixIcon: Icon(Icons.mail_outline_rounded, size: 20, color: AppTheme.textMuted),
+              prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) return 'Introduce un correo';
@@ -422,13 +427,12 @@ class _AuthScreenState extends State<AuthScreen> {
             controller: _regPasswordController,
             obscureText: _obscureRegPassword,
             decoration: InputDecoration(
-              labelText: 'Contraseña',
-              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: AppTheme.textMuted),
+              labelText: 'Contraseña (mín 6 caracteres)',
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureRegPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   size: 20,
-                  color: AppTheme.textMuted,
                 ),
                 onPressed: () {
                   setState(() => _obscureRegPassword = !_obscureRegPassword);
@@ -447,14 +451,13 @@ class _AuthScreenState extends State<AuthScreen> {
             obscureText: _obscureRegConfirmPassword,
             decoration: InputDecoration(
               labelText: 'Confirmar contraseña',
-              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: AppTheme.textMuted),
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureRegConfirmPassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   size: 20,
-                  color: AppTheme.textMuted,
                 ),
                 onPressed: () {
                   setState(() => _obscureRegConfirmPassword = !_obscureRegConfirmPassword);
@@ -468,16 +471,27 @@ class _AuthScreenState extends State<AuthScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _submitRegister,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('Crear Cuenta'),
+          const SizedBox(height: 22),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submitRegister,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text(
+                      'Crear Cuenta de Jugador',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+            ),
           ),
         ],
       ),

@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Barra de navegación modular adaptable al ROL del usuario (Admin o Cliente).
+/// Barra de navegación modular con estética deportiva sobria y moderna (estilo Playtomic).
 class AppBottomNav extends StatelessWidget {
-  /// Índice de la pestaña seleccionada actualmente.
   final int currentIndex;
-
-  /// Callback que se dispara al pulsar una pestaña.
   final ValueChanged<int> onTap;
-
-  /// Rol del usuario: 'admin', 'cliente', etc.
   final String rol;
 
   const AppBottomNav({
@@ -23,66 +18,78 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos las pestañas segun el rol
     final List<NavigationDestination> destinations = isAdmin
         ? const [
             NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard_rounded, color: AppTheme.accent),
-              label: 'Inicio',
+              icon: Icon(Icons.dashboard_outlined, size: 22),
+              selectedIcon: Icon(Icons.dashboard_rounded, color: AppTheme.accent, size: 24),
+              label: 'Club',
             ),
             NavigationDestination(
-              icon: Icon(Icons.add_circle_outline_rounded),
-              selectedIcon: Icon(Icons.add_circle_rounded, color: AppTheme.accent),
-              label: 'Eventos',
+              icon: Icon(Icons.add_circle_outline_rounded, size: 22),
+              selectedIcon: Icon(Icons.add_circle_rounded, color: AppTheme.accent, size: 24),
+              label: 'Crear Pista',
             ),
             NavigationDestination(
-              icon: Icon(Icons.people_outline_rounded),
-              selectedIcon: Icon(Icons.people_rounded, color: AppTheme.accent),
-              label: 'Usuarios',
+              icon: Icon(Icons.group_outlined, size: 22),
+              selectedIcon: Icon(Icons.group_rounded, color: AppTheme.accent, size: 24),
+              label: 'Socios',
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month_rounded, color: AppTheme.accent),
-              label: 'Gestionar',
+              icon: Icon(Icons.event_note_outlined, size: 22),
+              selectedIcon: Icon(Icons.event_available_rounded, color: AppTheme.accent, size: 24),
+              label: 'Reservas',
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings_rounded, color: AppTheme.accent),
+              icon: Icon(Icons.tune_outlined, size: 22),
+              selectedIcon: Icon(Icons.tune_rounded, color: AppTheme.accent, size: 24),
               label: 'Ajustes',
             ),
           ]
         : const [
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              selectedIcon: Icon(Icons.explore_rounded, color: AppTheme.accent),
+              icon: Icon(Icons.explore_outlined, size: 24),
+              selectedIcon: Icon(Icons.explore_rounded, color: AppTheme.accent, size: 26),
               label: 'Explorar',
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_today_outlined),
-              selectedIcon: Icon(Icons.calendar_month_rounded, color: AppTheme.accent),
-              label: 'Mis Citas',
+              icon: Icon(Icons.confirmation_number_outlined, size: 22),
+              selectedIcon: Icon(Icons.confirmation_number_rounded, color: AppTheme.accent, size: 24),
+              label: 'Mis Reservas',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded, color: AppTheme.accent),
+              icon: Icon(Icons.person_outline_rounded, size: 24),
+              selectedIcon: Icon(Icons.person_rounded, color: AppTheme.accent, size: 26),
               label: 'Perfil',
             ),
           ];
 
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
           top: BorderSide(color: AppTheme.border, width: 1),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
-      child: NavigationBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        indicatorColor: AppTheme.accent.withValues(alpha: 0.12),
-        selectedIndex: currentIndex.clamp(0, destinations.length - 1),
-        onDestinationSelected: onTap,
-        destinations: destinations,
+      child: SafeArea(
+        top: false,
+        child: NavigationBar(
+          height: 64,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          indicatorColor: AppTheme.accentBg,
+          selectedIndex: currentIndex.clamp(0, destinations.length - 1),
+          onDestinationSelected: onTap,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: destinations,
+        ),
       ),
     );
   }

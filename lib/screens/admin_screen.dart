@@ -29,14 +29,13 @@ class _AdminScreenState extends State<AdminScreen> {
     final String rol = (widget.usuario['rol'] ?? 'admin').toString().toUpperCase();
 
     final List<String> titulos = [
-      'Panel de Control',
-      'Crear Evento / Espacio',
-      'Directorio de Usuarios',
-      'Gestión de Reservas',
-      'Ajustes del Sistema',
+      'PANEL DEL CLUB',
+      'PISTAS Y ESPACIOS',
+      'SOCIOS DEL CLUB',
+      'RESERVAS DE PISTAS',
+      'AJUSTES DEL CLUB',
     ];
 
-    // Cada pestaña en su archivo independiente
     final List<Widget> vistas = [
       AdminHomeView(nombre: nombre, email: email, rol: rol),
       const AdminCrearEventoView(),
@@ -46,14 +45,33 @@ class _AdminScreenState extends State<AdminScreen> {
     ];
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: Text(titulos[_currentIndex]),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppTheme.accent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.shield_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              titulos[_currentIndex],
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                letterSpacing: 1.0,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded),
+            icon: const Icon(Icons.logout_rounded, size: 20),
             tooltip: 'Cerrar Sesión',
             onPressed: () {
               Navigator.pushReplacement(

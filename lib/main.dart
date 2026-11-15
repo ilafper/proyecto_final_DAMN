@@ -13,7 +13,7 @@ class SpotBookingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Espacios DAM',
+      title: 'Play & Book',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const AuthScreen(),

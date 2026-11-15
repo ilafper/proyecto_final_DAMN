@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   // Dirección IP del servidor backend Node.js / Express
-  static const String serverHost = 'http://192.168.1.129:5500';
+  static const String serverHost = 'http://192.168.1.134:5500';
   static const String baseUrl = '$serverHost/api/auth';
   static const String apiUrl = '$serverHost/api';
 
@@ -32,13 +32,12 @@ class AuthService {
       final response = await http.post(
         url,
         headers: _headers,
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
-      debugPrint('🟢 [AuthService.login] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.login] Status: ${response.statusCode} | Body: ${response.body}',
+      );
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
@@ -89,7 +88,9 @@ class AuthService {
         }),
       );
 
-      debugPrint('🟢 [AuthService.registro] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.registro] Status: ${response.statusCode} | Body: ${response.body}',
+      );
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (response.statusCode == 201 && data['success'] == true) {
@@ -124,17 +125,23 @@ class AuthService {
 
     try {
       final response = await http.get(url, headers: _headers);
-      debugPrint('🟢 [AuthService.getEspacios] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.getEspacios] Status: ${response.statusCode} | Body: ${response.body}',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['espacios'] != null) {
           final list = List<Map<String, dynamic>>.from(data['espacios']);
-          debugPrint('✅ [AuthService.getEspacios] Se han cargado ${list.length} espacios');
+          debugPrint(
+            '✅ [AuthService.getEspacios] Se han cargado ${list.length} espacios',
+          );
           return list;
         }
       } else {
-        debugPrint('⚠️ [AuthService.getEspacios] Respuesta no exitosa: ${response.statusCode}');
+        debugPrint(
+          '⚠️ [AuthService.getEspacios] Respuesta no exitosa: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('🔴 [AuthService.getEspacios] Excepción: $e');
@@ -160,7 +167,9 @@ class AuthService {
       'precio_por_dia': precioPorDia,
       'estado': estado,
     };
-    debugPrint('🔵 [AuthService.crearEspacio] POST -> $url | Body: ${jsonEncode(body)}');
+    debugPrint(
+      '🔵 [AuthService.crearEspacio] POST -> $url | Body: ${jsonEncode(body)}',
+    );
 
     try {
       final response = await http.post(
@@ -169,7 +178,9 @@ class AuthService {
         body: jsonEncode(body),
       );
 
-      debugPrint('🟢 [AuthService.crearEspacio] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.crearEspacio] Status: ${response.statusCode} | Body: ${response.body}',
+      );
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
@@ -186,27 +197,41 @@ class AuthService {
   // ==========================================
 
   // 1. Obtener reservas reales (soporta evento_id y usuario_id)
-  Future<List<Map<String, dynamic>>> getReservas({dynamic usuarioId, dynamic eventoId}) async {
+  Future<List<Map<String, dynamic>>> getReservas({
+    dynamic usuarioId,
+    dynamic eventoId,
+  }) async {
     final Map<String, String> queryParams = {};
     if (usuarioId != null) queryParams['usuario_id'] = usuarioId.toString();
-    if (eventoId != null) queryParams['evento_id'] = eventoId.toString();
+    if (eventoId != null) {
+      queryParams['evento_id'] = eventoId.toString();
+      queryParams['espacio_id'] = eventoId.toString();
+    }
 
-    final uri = Uri.parse('$apiUrl/reservas').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    final uri = Uri.parse(
+      '$apiUrl/reservas',
+    ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
     debugPrint('🔵 [AuthService.getReservas] GET -> $uri');
 
     try {
       final response = await http.get(uri, headers: _headers);
-      debugPrint('🟢 [AuthService.getReservas] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.getReservas] Status: ${response.statusCode} | Body: ${response.body}',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['reservas'] != null) {
           final list = List<Map<String, dynamic>>.from(data['reservas']);
-          debugPrint('✅ [AuthService.getReservas] Se han cargado ${list.length} reservas');
+          debugPrint(
+            '✅ [AuthService.getReservas] Se han cargado ${list.length} reservas',
+          );
           return list;
         }
       } else {
-        debugPrint('⚠️ [AuthService.getReservas] Respuesta no exitosa: ${response.statusCode}');
+        debugPrint(
+          '⚠️ [AuthService.getReservas] Respuesta no exitosa: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('🔴 [AuthService.getReservas] Excepción: $e');
@@ -214,23 +239,26 @@ class AuthService {
     return [];
   }
 
-  // 2. Crear nueva reserva con fecha y franja_horaria (por defecto 'pendiente')
+  // 2. Crear nueva reserva con confirmación inmediata o lista de espera
   Future<Map<String, dynamic>> crearReserva({
     required dynamic eventoId,
     required dynamic usuarioId,
     required String fecha,
     required String franjaHoraria,
-    String estado = 'pendiente',
+    String estado = 'confirmada',
   }) async {
     final url = Uri.parse('$apiUrl/reservas');
     final body = {
+      'espacio_id': eventoId,
       'evento_id': eventoId,
       'usuario_id': usuarioId,
       'fecha': fecha,
       'franja_horaria': franjaHoraria,
       'estado': estado,
     };
-    debugPrint('🔵 [AuthService.crearReserva] POST -> $url | Body: ${jsonEncode(body)}');
+    debugPrint(
+      '🔵 [AuthService.crearReserva] POST -> $url | Body: ${jsonEncode(body)}',
+    );
 
     try {
       final response = await http.post(
@@ -239,42 +267,47 @@ class AuthService {
         body: jsonEncode(body),
       );
 
-      debugPrint('🟢 [AuthService.crearReserva] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.crearReserva] Status: ${response.statusCode} | Body: ${response.body}',
+      );
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
       debugPrint('🔴 [AuthService.crearReserva] Excepción: $e');
-      return {
-        'success': false,
-        'mensaje': 'Error de conexión al reservar: $e',
-      };
+      return {'success': false, 'mensaje': 'Error de conexión al reservar: $e'};
     }
   }
 
-  // 3. Actualizar estado de una reserva (Aceptar: 'reservado' | Rechazar: 'rechazado')
-  Future<Map<String, dynamic>> actualizarEstadoReserva({
-    required dynamic reservaId,
-    required String nuevoEstado,
-  }) async {
-    final url = Uri.parse('$apiUrl/reservas/$reservaId/estado');
-    debugPrint('🔵 [AuthService.actualizarEstadoReserva] PATCH -> $url con estado: $nuevoEstado');
+  // 3. Cancelar reserva (por usuario o admin) y promover lista de espera
+  Future<Map<String, dynamic>> cancelarReserva(dynamic reservaId) async {
+    final url = Uri.parse('$apiUrl/reservas/$reservaId/cancelar');
+    debugPrint('🔵 [AuthService.cancelarReserva] PATCH -> $url');
 
     try {
       final response = await http.patch(
         url,
         headers: _headers,
-        body: jsonEncode({'estado': nuevoEstado}),
+        body: jsonEncode({'estado': 'cancelada'}),
       );
 
-      debugPrint('🟢 [AuthService.actualizarEstadoReserva] Status: ${response.statusCode} | Body: ${response.body}');
+      debugPrint(
+        '🟢 [AuthService.cancelarReserva] Status: ${response.statusCode} | Body: ${response.body}',
+      );
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      debugPrint('🔴 [AuthService.actualizarEstadoReserva] Error: $e');
-      return {
-        'success': false,
-        'mensaje': 'Error de conexión al cambiar estado: $e',
-      };
+      debugPrint('🔴 [AuthService.cancelarReserva] Excepción: $e');
+      // Intentar fallback a PATCH /api/reservas/:id/estado
+      try {
+        final fallbackUrl = Uri.parse('$apiUrl/reservas/$reservaId/estado');
+        final fbResponse = await http.patch(
+          fallbackUrl,
+          headers: _headers,
+          body: jsonEncode({'estado': 'cancelada'}),
+        );
+        return jsonDecode(fbResponse.body);
+      } catch (_) {}
+      return {'success': false, 'mensaje': 'Error al cancelar reserva: $e'};
     }
   }
 }
