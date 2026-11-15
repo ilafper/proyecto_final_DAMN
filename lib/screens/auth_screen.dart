@@ -65,10 +65,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Bienvenido, ${usuario['nombre'] ?? usuario['nombre_completo'] ?? usuario['email']}!'),
+          content: Text(
+            '¡Bienvenido, ${usuario['nombre'] ?? usuario['nombre_completo'] ?? usuario['email']}!',
+          ),
           backgroundColor: AppTheme.accent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
 
@@ -82,9 +86,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => UserScreen(usuario: usuario),
-          ),
+          MaterialPageRoute(builder: (context) => UserScreen(usuario: usuario)),
         );
       }
     } else {
@@ -93,7 +95,9 @@ class _AuthScreenState extends State<AuthScreen> {
           content: Text(respuesta['mensaje'] ?? 'Error al iniciar sesión'),
           backgroundColor: AppTheme.danger,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -117,10 +121,14 @@ class _AuthScreenState extends State<AuthScreen> {
     if (respuesta['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'Cuenta deportiva creada con éxito'),
+          content: Text(
+            respuesta['mensaje'] ?? 'Cuenta deportiva creada con éxito',
+          ),
           backgroundColor: AppTheme.accent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
 
@@ -135,7 +143,9 @@ class _AuthScreenState extends State<AuthScreen> {
           content: Text(respuesta['mensaje'] ?? 'Error al registrarte'),
           backgroundColor: AppTheme.danger,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -198,11 +208,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
           child: const Center(
-            child: Icon(
-              Icons.bolt_rounded,
-              color: AppTheme.voltNeon,
-              size: 34,
-            ),
+            child: Icon(Icons.bolt_rounded, color: AppTheme.voltNeon, size: 34),
           ),
         ),
         const SizedBox(height: 18),
@@ -304,6 +310,7 @@ class _AuthScreenState extends State<AuthScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const SizedBox(height: 5),
           TextFormField(
             controller: _loginEmailController,
             keyboardType: TextInputType.emailAddress,
@@ -313,8 +320,10 @@ class _AuthScreenState extends State<AuthScreen> {
               prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Introduce tu correo';
-              if (!value.contains('@') || !value.contains('.')) return 'Correo no válido';
+              if (value == null || value.trim().isEmpty)
+                return 'Introduce tu correo';
+              if (!value.contains('@') || !value.contains('.'))
+                return 'Correo no válido';
               return null;
             },
           ),
@@ -327,16 +336,21 @@ class _AuthScreenState extends State<AuthScreen> {
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureLoginPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  _obscureLoginPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   size: 20,
                 ),
                 onPressed: () {
-                  setState(() => _obscureLoginPassword = !_obscureLoginPassword);
+                  setState(
+                    () => _obscureLoginPassword = !_obscureLoginPassword,
+                  );
                 },
               ),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Introduce tu contraseña';
+              if (value == null || value.isEmpty)
+                return 'Introduce tu contraseña';
               return null;
             },
           ),
@@ -347,9 +361,13 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Contacta con el club para recuperar tu acceso'),
+                    content: const Text(
+                      'Contacta con el club para recuperar tu acceso',
+                    ),
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               },
@@ -373,17 +391,25 @@ class _AuthScreenState extends State<AuthScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               child: _isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text(
                       'Entrar a la Pista',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
             ),
           ),
@@ -404,8 +430,9 @@ class _AuthScreenState extends State<AuthScreen> {
               labelText: 'Nombre y apellidos',
               prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
             ),
-            validator: (value) =>
-                value == null || value.trim().isEmpty ? 'Introduce tu nombre' : null,
+            validator: (value) => value == null || value.trim().isEmpty
+                ? 'Introduce tu nombre'
+                : null,
           ),
           const SizedBox(height: 14),
           TextFormField(
@@ -417,8 +444,10 @@ class _AuthScreenState extends State<AuthScreen> {
               prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Introduce un correo';
-              if (!value.contains('@') || !value.contains('.')) return 'Correo no válido';
+              if (value == null || value.trim().isEmpty)
+                return 'Introduce un correo';
+              if (!value.contains('@') || !value.contains('.'))
+                return 'Correo no válido';
               return null;
             },
           ),
@@ -431,7 +460,9 @@ class _AuthScreenState extends State<AuthScreen> {
               prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureRegPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  _obscureRegPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   size: 20,
                 ),
                 onPressed: () {
@@ -440,7 +471,8 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Introduce una contraseña';
+              if (value == null || value.isEmpty)
+                return 'Introduce una contraseña';
               if (value.length < 6) return 'Mínimo 6 caracteres';
               return null;
             },
@@ -460,7 +492,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   size: 20,
                 ),
                 onPressed: () {
-                  setState(() => _obscureRegConfirmPassword = !_obscureRegConfirmPassword);
+                  setState(
+                    () => _obscureRegConfirmPassword =
+                        !_obscureRegConfirmPassword,
+                  );
                 },
               ),
             ),
@@ -479,17 +514,25 @@ class _AuthScreenState extends State<AuthScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               child: _isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text(
                       'Crear Cuenta de Jugador',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
             ),
           ),

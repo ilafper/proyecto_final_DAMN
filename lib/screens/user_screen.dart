@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/bbdd_service.dart';
 import '../theme/app_theme.dart';
-import '../utils/venue_visual_helper.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/modal_reserva_espacio.dart';
 import 'auth_screen.dart';
@@ -87,6 +86,36 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
+  Map<String, dynamic> _obtenerInfoVisual(Map<String, dynamic> espacio) {
+    final cat = (espacio['categoria'] ?? '').toString().toLowerCase().trim();
+    final nombre = (espacio['nombre'] ?? '').toString().toLowerCase();
+    final desc = (espacio['descripcion'] ?? '').toString().toLowerCase();
+    final combined = '$nombre $desc';
+
+    bool esLocal = false;
+    if (cat.isNotEmpty) {
+      esLocal =
+          (cat == 'locales' ||
+          cat == 'local' ||
+          cat == 'evento' ||
+          cat == 'eventos');
+    } else {
+      esLocal =
+          combined.contains('evento') ||
+          combined.contains('fiesta') ||
+          combined.contains('local') ||
+          combined.contains('cumple');
+    }
+
+    final String tag = esLocal ? 'LOCAL PARA EVENTOS' : 'PISTA DE PÁDEL';
+    final IconData icon = esLocal
+        ? Icons.celebration_rounded
+        : Icons.sports_tennis_rounded;
+    final Color color = esLocal ? AppTheme.partyPurple : AppTheme.accent;
+
+    return {'tag': tag, 'icon': icon, 'color': color, 'esLocal': esLocal};
+  }
+
   List<Map<String, dynamic>> get _espaciosFiltrados {
     return _espacios.where((e) {
       final nombre = (e['nombre'] ?? '').toString().toLowerCase();
@@ -101,52 +130,13 @@ class _UserScreenState extends State<UserScreen> {
           descripcion.contains(query);
 
       bool coincideCategoria = true;
+      final visual = _obtenerInfoVisual(e);
+      final bool esLocal = visual['esLocal'] as bool;
+
       if (_categoriaSeleccionada == 'Locales & Eventos') {
-        coincideCategoria =
-            nombre.contains('evento') ||
-            nombre.contains('fiesta') ||
-            nombre.contains('local') ||
-            nombre.contains('cumple') ||
-            descripcion.contains('evento') ||
-            descripcion.contains('fiesta') ||
-            descripcion.contains('cumpleaños') ||
-            descripcion.contains('celebracion');
+        coincideCategoria = esLocal;
       } else if (_categoriaSeleccionada == 'Pádel & Tenis') {
-        coincideCategoria =
-            nombre.contains('padel') ||
-            nombre.contains('pádel') ||
-            nombre.contains('tenis') ||
-            descripcion.contains('padel') ||
-            descripcion.contains('pista') ||
-            descripcion.contains('raqueta');
-      } else if (_categoriaSeleccionada == 'Terrazas & Rooftop') {
-        coincideCategoria =
-            nombre.contains('terraza') ||
-            nombre.contains('rooftop') ||
-            descripcion.contains('terraza') ||
-            descripcion.contains('exterior') ||
-            descripcion.contains('vistas');
-      } else if (_categoriaSeleccionada == 'Fútbol & Canchas') {
-        coincideCategoria =
-            nombre.contains('futbol') ||
-            nombre.contains('fútbol') ||
-            nombre.contains('campo') ||
-            nombre.contains('cancha') ||
-            descripcion.contains('futbol');
-      } else if (_categoriaSeleccionada == 'Salas & Reuniones') {
-        coincideCategoria =
-            nombre.contains('sala') ||
-            nombre.contains('reunion') ||
-            nombre.contains('reunión') ||
-            descripcion.contains('reuniones') ||
-            descripcion.contains('oficina');
-      } else if (_categoriaSeleccionada == 'Fitness & Yoga') {
-        coincideCategoria =
-            nombre.contains('fitness') ||
-            nombre.contains('gym') ||
-            nombre.contains('gimnasio') ||
-            descripcion.contains('yoga') ||
-            descripcion.contains('entrenamiento');
+        coincideCategoria = !esLocal;
       }
 
       return coincideBusqueda && coincideCategoria;
@@ -418,8 +408,7 @@ class _UserScreenState extends State<UserScreen> {
                                 });
                               },
                               decoration: InputDecoration(
-                                hintText:
-                                    'Dirección, club, local para eventos...',
+                                hintText: 'nombre, direccion...',
                                 hintStyle: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.55),
                                   fontSize: 13.5,
@@ -449,7 +438,7 @@ class _UserScreenState extends State<UserScreen> {
                                   horizontal: 16,
                                   vertical: 14,
                                 ),
-                                fillColor: Colors.transparent,
+                                fillColor: const Color.fromARGB(0, 212, 13, 13),
                               ),
                             ),
                           ),
@@ -461,6 +450,12 @@ class _UserScreenState extends State<UserScreen> {
                             child: Row(
                               children: [
                                 _buildHeroQuickPill(
+                                  icon: Icons.explore_rounded,
+                                  label: 'Todos',
+                                  categoria: 'Todos',
+                                ),
+                                const SizedBox(width: 8),
+                                _buildHeroQuickPill(
                                   icon: Icons.sports_tennis_rounded,
                                   label: 'Pádel & Canchas',
                                   categoria: 'Pádel & Tenis',
@@ -468,14 +463,8 @@ class _UserScreenState extends State<UserScreen> {
                                 const SizedBox(width: 8),
                                 _buildHeroQuickPill(
                                   icon: Icons.celebration_rounded,
-                                  label: 'Locales & Fiestas',
+                                  label: 'Locales & Eventos',
                                   categoria: 'Locales & Eventos',
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeroQuickPill(
-                                  icon: Icons.deck_rounded,
-                                  label: 'Terrazas & Vistas',
-                                  categoria: 'Terrazas & Rooftop',
                                 ),
                               ],
                             ),
@@ -659,199 +648,89 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  // Tarjeta de Espacio con Fotografía Real estilo Playtomic/Peerspace
+  // Tarjeta de Espacio Limpia y Moderna con Datos Reales
   Widget _buildVenueCard(Map<String, dynamic> e) {
     final nombre = e['nombre'] ?? 'Espacio';
-    final ubicacion = e['ubicacion'] ?? 'Ubicación céntrica';
-    final capacidad = e['capacidad_maxima'] ?? '20';
-    final precio = e['precio_por_dia'] ?? '35';
-    final desc = e['descripcion'] ?? '';
+    final ubicacion = (e['ubicacion'] ?? 'Ubicación céntrica')
+        .toString()
+        .trim();
+    final capacidad = e['capacidad_maxima'] ?? '4';
+    final precio = e['precio_por_dia'] ?? '0';
+    final desc = (e['descripcion'] ?? '').toString().trim();
 
-    // Obtener información visual dinámica (imagen, tag, color e iconos)
-    final typeInfo = VenueVisualHelper.getTypeInfo(e);
-    final imageUrl = VenueVisualHelper.getImageUrl(e);
+    final visual = _obtenerInfoVisual(e);
+    final String tag = visual['tag'] as String;
+    final IconData icon = visual['icon'] as IconData;
+    final Color color = visual['color'] as Color;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.border, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           onTap: () => _abrirModalReserva(e),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- 1. IMAGEN DE CABECERA CON BADGES Y PRECIO ---
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(21),
-                    ),
-                    child: Image.network(
-                      imageUrl,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) {
-                        return Container(
-                          height: 180,
-                          color: typeInfo.color.withValues(alpha: 0.15),
-                          child: Center(
-                            child: Icon(
-                              typeInfo.icon,
-                              size: 48,
-                              color: typeInfo.color,
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (ctx, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          height: 180,
-                          color: AppTheme.surfaceSubtle,
-                          child: const Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.accent,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Gradiente oscuro sutil sobre la imagen
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(21),
-                        ),
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withValues(alpha: 0.4),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.5),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Badge de tipo de espacio (Arriba a la izquierda)
-                  Positioned(
-                    top: 14,
-                    left: 14,
-                    child: Container(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Fila Superior: Badge de Categoría a la izquierda y Precio a la derecha
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: typeInfo.color,
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: typeInfo.color.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        border: Border.all(
+                          color: color.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(typeInfo.icon, color: Colors.white, size: 14),
+                          Icon(icon, color: color, size: 14),
                           const SizedBox(width: 5),
                           Text(
-                            typeInfo.tag,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Valoración (Arriba a la derecha)
-                  Positioned(
-                    top: 14,
-                    right: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(
-                            Icons.star_rounded,
-                            color: Colors.amber,
-                            size: 15,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '4.9',
+                            tag,
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                              color: color,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-
-                  // Precio flotante sobre la foto (Abajo a la derecha)
-                  Positioned(
-                    bottom: 12,
-                    right: 14,
-                    child: Container(
+                    Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        color: AppTheme.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.border),
                       ),
                       child: RichText(
                         text: TextSpan(
@@ -859,7 +738,7 @@ class _UserScreenState extends State<UserScreen> {
                             TextSpan(
                               text: '$precio€',
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w900,
                                 color: AppTheme.textPrimary,
                                 fontFamily: 'Plus Jakarta Sans',
@@ -878,116 +757,106 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Nombre del Espacio / Pista
+                Text(
+                  nombre,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                    letterSpacing: -0.3,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 4),
 
-              // --- 2. CONTENIDO Y DETALLES DEL LUGAR ---
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Ubicación Real
+                Row(
                   children: [
-                    Text(
-                      nombre,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
-                        letterSpacing: -0.4,
-                      ),
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 15,
+                      color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.place_outlined,
-                          size: 15,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            ubicacion,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    if (desc.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        desc,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        ubicacion,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppTheme.textSecondary,
                         ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 14),
-
-                    // Chips de características
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        _buildFeatureChip(
-                          Icons.people_outline_rounded,
-                          'Hasta $capacidad pers',
-                        ),
-                        ...typeInfo.features.map(
-                          (f) => _buildFeatureChip(
-                            Icons.check_circle_outline_rounded,
-                            f,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Botón de Reserva Vívido
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: ElevatedButton(
-                        onPressed: () => _abrirModalReserva(e),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: typeInfo.color,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.calendar_month_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Consultar Fechas y Reservar',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                // Descripción (solo si el admin la añadió)
+                if (desc.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    desc,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 14),
+
+                // Único Chip con datos reales de la BD: Capacidad
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildFeatureChip(
+                      Icons.people_outline_rounded,
+                      'Hasta $capacidad pers',
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Botón de Reserva
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () => _abrirModalReserva(e),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.calendar_month_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Consultar Fechas y Reservar',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1074,13 +943,12 @@ class _UserScreenState extends State<UserScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => ModalReservaEspacio(
         espacio: espacio,
-        usuarioId: widget.usuario['id'],
+        usuarioId: widget.usuario['id'] ?? widget.usuario['usuario_id'],
         onReservaConfirmada: _cargarDatos,
       ),
     );
   }
 
-  // --- PESTAÑA 1: MIS RESERVAS / EVENTOS ---
   Widget _buildMisReservasTab() {
     return RefreshIndicator(
       color: AppTheme.accent,
@@ -1152,10 +1020,7 @@ class _UserScreenState extends State<UserScreen> {
 
                 Color badgeColor = AppTheme.warning;
                 Color badgeBg = const Color(0xFFFEF3C7);
-                String estadoTexto = 'EN ESPERA';
-                IconData statusIcon = Icons.hourglass_top_rounded;
-                String estadoDesc =
-                    'En lista de espera. Entrarás si queda libre.';
+                String estadoTexto = 'PENDIENTE';
 
                 if (estado == 'confirmada' ||
                     estado == 'reservado' ||
@@ -1163,14 +1028,10 @@ class _UserScreenState extends State<UserScreen> {
                   badgeColor = AppTheme.success;
                   badgeBg = const Color(0xFFDCFCE7);
                   estadoTexto = 'CONFIRMADA';
-                  statusIcon = Icons.check_circle_rounded;
-                  estadoDesc = 'Pista reservada y lista para jugar.';
                 } else if (estado == 'cancelada' || estado == 'rechazado') {
                   badgeColor = AppTheme.danger;
                   badgeBg = const Color(0xFFFEE2E2);
                   estadoTexto = 'CANCELADA';
-                  statusIcon = Icons.cancel_outlined;
-                  estadoDesc = 'Esta reserva ha sido cancelada.';
                 }
 
                 return Container(
@@ -1209,15 +1070,10 @@ class _UserScreenState extends State<UserScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    estadoDesc,
-                                    style: TextStyle(
+                                    'Reserva #${r['id'] ?? index + 1}',
+                                    style: const TextStyle(
                                       fontSize: 12,
-                                      color: estado == 'en_espera'
-                                          ? const Color(0xFFB45309)
-                                          : AppTheme.textSecondary,
-                                      fontWeight: estado == 'en_espera'
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
+                                      color: AppTheme.textMuted,
                                     ),
                                   ),
                                 ],
@@ -1232,21 +1088,14 @@ class _UserScreenState extends State<UserScreen> {
                                 color: badgeBg,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(statusIcon, size: 13, color: badgeColor),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    estadoTexto,
-                                    style: TextStyle(
-                                      color: badgeColor,
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.4,
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                estadoTexto,
+                                style: TextStyle(
+                                  color: badgeColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.4,
+                                ),
                               ),
                             ),
                           ],
@@ -1299,8 +1148,7 @@ class _UserScreenState extends State<UserScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton.icon(
-                              onPressed: () =>
-                                  _confirmarCancelarReserva(r['id']),
+                              onPressed: () => _confirmarCancelarReserva(r),
                               icon: const Icon(
                                 Icons.cancel_outlined,
                                 size: 16,
@@ -1326,31 +1174,136 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Future<void> _confirmarCancelarReserva(dynamic reservaId) async {
+  DateTime? _obtenerFechaHoraInicio(String fechaRaw, String franjaRaw) {
+    try {
+      final fechaLimpia = fechaRaw.split('T').first.trim();
+      final partesFecha = fechaLimpia.split('-');
+      final year = int.parse(partesFecha[0]);
+      final month = int.parse(partesFecha[1]);
+      final day = int.parse(partesFecha[2]);
+
+      int hour = 9;
+      int minute = 0;
+      if (franjaRaw.contains(':')) {
+        final inicio = franjaRaw.split('-').first.trim();
+        final partesHora = inicio.split(':');
+        hour = int.parse(partesHora[0]);
+        minute = int.parse(partesHora[1]);
+      }
+
+      return DateTime(year, month, day, hour, minute);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _confirmarCancelarReserva(Map<String, dynamic> r) async {
+    final reservaId = r['id'];
     if (reservaId == null) return;
+
+    final fecha = (r['fecha'] ?? r['fecha_inicio'] ?? '').toString();
+    final franja = (r['franja_horaria'] ?? '').toString();
+    final inicio = _obtenerFechaHoraInicio(fecha, franja);
+    final now = DateTime.now();
+
+    final bool conMargen = inicio != null
+        ? inicio.difference(now).inMinutes >= (12 * 60)
+        : true;
+
+    final int horasRestantes = inicio != null
+        ? inicio.difference(now).inHours
+        : 99;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar reserva?'),
-        content: const Text(
-          'Esta acción liberará la franja horaria para otros usuarios.',
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              conMargen
+                  ? Icons.info_outline_rounded
+                  : Icons.warning_amber_rounded,
+              color: conMargen ? AppTheme.accent : AppTheme.warning,
+            ),
+            const SizedBox(width: 8),
+            const Text('¿Cancelar reserva?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              conMargen
+                  ? 'Faltan más de 12 horas ($horasRestantes h) para el inicio de tu turno.\n\n'
+                        '✓ Se liberará el espacio para otros socios.\n'
+                        '✓ Se te reembolsará el 100% del importe abonado.'
+                  : '⚠️ ¡Aviso de cancelación tardía! Faltan menos de 12 horas para el inicio.\n\n'
+                        '✓ El espacio quedará liberado para otros socios o lista de espera.\n'
+                        '✗ NO se emitirá reembolso económico según la política de 12h del club.',
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: conMargen
+                    ? AppTheme.textPrimary
+                    : const Color(0xFF92400E),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Volver'),
+            child: const Text(
+              'Volver',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-            child: const Text('Sí, cancelar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: conMargen ? AppTheme.accent : AppTheme.danger,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              conMargen ? 'Confirmar y Reembolsar' : 'Cancelar sin reembolso',
+            ),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      _cargarMisReservas();
+      setState(() => _cargandoReservas = true);
+      final resp = await _authService.cancelarReserva(reservaId);
+      await _cargarMisReservas();
+
+      if (!mounted) return;
+
+      final bool exito = resp['success'] == true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            exito
+                ? (conMargen
+                      ? '✓ Reserva cancelada. Espacio liberado y 100% reembolsado.'
+                      : 'Espacio liberado para otros socios. Sin derecho a reembolso (<12h).')
+                : (resp['mensaje'] ?? 'No se pudo cancelar la reserva'),
+          ),
+          backgroundColor: exito
+              ? (conMargen ? const Color(0xFF059669) : AppTheme.warning)
+              : AppTheme.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -1436,7 +1389,7 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                         ),
                         child: Text(
-                          'MIEMBRO • ${rol.toUpperCase()}',
+                          'MIEMBRO VIP • ${rol.toUpperCase()}',
                           style: const TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w800,

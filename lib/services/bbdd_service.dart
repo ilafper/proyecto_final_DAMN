@@ -156,6 +156,7 @@ class AuthService {
     required String ubicacion,
     required int capacidadMaxima,
     required double precioPorDia,
+    String categoria = 'padel',
     String estado = 'disponible',
   }) async {
     final url = Uri.parse('$apiUrl/espacios');
@@ -165,6 +166,7 @@ class AuthService {
       'ubicacion': ubicacion,
       'capacidad_maxima': capacidadMaxima,
       'precio_por_dia': precioPorDia,
+      'categoria': categoria,
       'estado': estado,
     };
     debugPrint(
@@ -273,7 +275,7 @@ class AuthService {
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      debugPrint('🔴 [AuthService.crearReserva] Excepción: $e');
+      debugPrint('[AuthService.crearReserva] Excepción: $e');
       return {'success': false, 'mensaje': 'Error de conexión al reservar: $e'};
     }
   }
@@ -281,7 +283,7 @@ class AuthService {
   // 3. Cancelar reserva (por usuario o admin) y promover lista de espera
   Future<Map<String, dynamic>> cancelarReserva(dynamic reservaId) async {
     final url = Uri.parse('$apiUrl/reservas/$reservaId/cancelar');
-    debugPrint('🔵 [AuthService.cancelarReserva] PATCH -> $url');
+    debugPrint('[AuthService.cancelarReserva] PATCH -> $url');
 
     try {
       final response = await http.patch(
@@ -291,13 +293,12 @@ class AuthService {
       );
 
       debugPrint(
-        '🟢 [AuthService.cancelarReserva] Status: ${response.statusCode} | Body: ${response.body}',
+        '[AuthService.cancelarReserva] Status: ${response.statusCode} | Body: ${response.body}',
       );
       final data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      debugPrint('🔴 [AuthService.cancelarReserva] Excepción: $e');
-      // Intentar fallback a PATCH /api/reservas/:id/estado
+      debugPrint('[AuthService.cancelarReserva] Excepción: $e');
       try {
         final fallbackUrl = Uri.parse('$apiUrl/reservas/$reservaId/estado');
         final fbResponse = await http.patch(

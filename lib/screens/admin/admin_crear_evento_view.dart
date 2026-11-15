@@ -37,6 +37,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
     final ubicacionCtrl = TextEditingController();
     final capacidadCtrl = TextEditingController(text: '4');
     final precioCtrl = TextEditingController(text: '20.0');
+    String categoriaSeleccionada = 'padel';
     bool guardando = false;
 
     showModalBottomSheet(
@@ -77,7 +78,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Nueva Pista Deportiva',
+                          'Nuevo Espacio',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -92,11 +93,129 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                       ],
                     ),
                     const SizedBox(height: 16),
+
+                    // Selector de Categoría (Pádel vs Locales)
+                    const Text(
+                      'Categoría del Espacio *',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                categoriaSeleccionada = 'padel';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: categoriaSeleccionada == 'padel'
+                                    ? AppTheme.accent.withValues(alpha: 0.12)
+                                    : AppTheme.surfaceSubtle,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: categoriaSeleccionada == 'padel'
+                                      ? AppTheme.accent
+                                      : AppTheme.border,
+                                  width: categoriaSeleccionada == 'padel' ? 1.8 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.sports_tennis_rounded,
+                                    size: 18,
+                                    color: categoriaSeleccionada == 'padel'
+                                        ? AppTheme.accent
+                                        : AppTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Pádel & Canchas',
+                                    style: TextStyle(
+                                      fontWeight: categoriaSeleccionada == 'padel'
+                                          ? FontWeight.w800
+                                          : FontWeight.w600,
+                                      fontSize: 13,
+                                      color: categoriaSeleccionada == 'padel'
+                                          ? AppTheme.accent
+                                          : AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                categoriaSeleccionada = 'locales';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: categoriaSeleccionada == 'locales'
+                                    ? AppTheme.partyPurple.withValues(alpha: 0.12)
+                                    : AppTheme.surfaceSubtle,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: categoriaSeleccionada == 'locales'
+                                      ? AppTheme.partyPurple
+                                      : AppTheme.border,
+                                  width: categoriaSeleccionada == 'locales' ? 1.8 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.celebration_rounded,
+                                    size: 18,
+                                    color: categoriaSeleccionada == 'locales'
+                                        ? AppTheme.partyPurple
+                                        : AppTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Locales & Eventos',
+                                    style: TextStyle(
+                                      fontWeight: categoriaSeleccionada == 'locales'
+                                          ? FontWeight.w800
+                                          : FontWeight.w600,
+                                      fontSize: 13,
+                                      color: categoriaSeleccionada == 'locales'
+                                          ? AppTheme.partyPurple
+                                          : AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
                     TextField(
                       controller: nombreCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Nombre de la pista *',
-                        hintText: 'Ej. Pista 1 Cristal Panorámica o Cancha Central',
+                        labelText: 'Nombre *',
+                        hintText: 'Ej. Pista 1, Local Principal, etc.',
                         prefixIcon: Icon(Icons.sports_tennis_rounded, size: 20),
                       ),
                     ),
@@ -104,8 +223,8 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                     TextField(
                       controller: ubicacionCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Ubicación / Sector',
-                        hintText: 'Ej. Zona Exterior - Pista 1',
+                        labelText: 'Ubicación *',
+                        hintText: 'Ej. Zona 1, Planta Baja',
                         prefixIcon: Icon(Icons.place_outlined, size: 20),
                       ),
                     ),
@@ -114,8 +233,8 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                       controller: descCtrl,
                       maxLines: 2,
                       decoration: const InputDecoration(
-                        labelText: 'Descripción / Características',
-                        hintText: 'Ej. Césped texturado, iluminación LED 8 focos...',
+                        labelText: 'Descripción',
+                        hintText: 'Detalles o notas adicionales...',
                         prefixIcon: Icon(Icons.description_outlined, size: 20),
                       ),
                     ),
@@ -127,7 +246,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                             controller: capacidadCtrl,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
-                              labelText: 'Jugadores máx *',
+                              labelText: 'Capacidad máx *',
                               hintText: '4',
                               prefixIcon: Icon(Icons.people_outline_rounded, size: 20),
                             ),
@@ -179,6 +298,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   ubicacion: ubicacion,
                                   capacidadMaxima: cap,
                                   precioPorDia: precio,
+                                  categoria: categoriaSeleccionada,
                                 );
 
                                 setModalState(() => guardando = false);
@@ -226,7 +346,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   Icon(Icons.check_circle_outline_rounded, size: 18),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Publicar Pista',
+                                    'Publicar Espacio',
                                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                                   ),
                                 ],
@@ -262,7 +382,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                 onPressed: () => _mostrarModalCrearEspacio(context),
                 icon: const Icon(Icons.add_rounded, size: 22),
                 label: const Text(
-                  'Añadir Nueva Pista / Cancha',
+                  'Añadir Nuevo Espacio',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -278,7 +398,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Pistas del Club',
+                  'Espacios Registrados',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -342,10 +462,14 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final e = _espacios[index];
-                  final nombre = e['nombre'] ?? 'Pista';
-                  final ubicacion = e['ubicacion'] ?? 'Sector Club';
+                  final nombre = e['nombre'] ?? 'Espacio';
+                  final ubicacion = (e['ubicacion'] ?? '').toString();
                   final capacidad = e['capacidad_maxima'] ?? '4';
                   final precio = e['precio_por_dia'] ?? '0';
+                  final cat = (e['categoria'] ?? 'padel').toString().toLowerCase();
+                  final bool esLocal = cat == 'locales' || cat == 'local' || cat == 'evento' || cat == 'eventos';
+                  final IconData itemIcon = esLocal ? Icons.celebration_rounded : Icons.sports_tennis_rounded;
+                  final Color itemColor = esLocal ? AppTheme.partyPurple : AppTheme.accent;
 
                   return Container(
                     decoration: BoxDecoration(
@@ -361,12 +485,12 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: AppTheme.accentBg,
+                              color: itemColor.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              Icons.sports_tennis_rounded,
-                              color: AppTheme.accent,
+                            child: Icon(
+                              itemIcon,
+                              color: itemColor,
                               size: 22,
                             ),
                           ),
@@ -375,13 +499,34 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  nombre,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: AppTheme.textPrimary,
-                                  ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        nombre,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: itemColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        esLocal ? 'LOCAL' : 'PÁDEL',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: itemColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -395,7 +540,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                     const SizedBox(width: 3),
                                     Text('Máx $capacidad', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                                     const SizedBox(width: 10),
-                                    Text('$precio€ / sesión', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accent)),
+                                    Text('$precio€ / sesión', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: itemColor)),
                                   ],
                                 ),
                               ],
