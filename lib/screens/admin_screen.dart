@@ -24,9 +24,14 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String nombre = widget.usuario['nombre'] ?? widget.usuario['nombre_completo'] ?? 'Administrador';
+    final String nombre =
+        widget.usuario['nombre'] ??
+        widget.usuario['nombre_completo'] ??
+        'Administrador';
     final String email = widget.usuario['email'] ?? '';
-    final String rol = (widget.usuario['rol'] ?? 'admin').toString().toUpperCase();
+    final String rol = (widget.usuario['rol'] ?? 'admin')
+        .toString()
+        .toUpperCase();
 
     final List<String> titulos = [
       'PANEL DEL CLUB',
@@ -55,7 +60,11 @@ class _AdminScreenState extends State<AdminScreen> {
                 color: AppTheme.accent,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.shield_rounded, color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.shield_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 10),
             Text(
@@ -82,9 +91,7 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: vistas[_currentIndex],
-      ),
+      body: SafeArea(child: vistas[_currentIndex]),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,
         rol: 'admin',

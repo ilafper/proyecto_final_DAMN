@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/bbdd_service.dart';
 import '../../theme/app_theme.dart';
+import 'dart:io';
 
 class AdminCrearEventoView extends StatefulWidget {
   const AdminCrearEventoView({super.key});
@@ -37,8 +39,14 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
     final ubicacionCtrl = TextEditingController();
     final capacidadCtrl = TextEditingController(text: '4');
     final precioCtrl = TextEditingController(text: '20.0');
+    File? imagenSeleccionada;
     String categoriaSeleccionada = 'padel';
     bool guardando = false;
+    String? errorMsg;
+    bool errorNombre = false;
+    bool errorUbicacion = false;
+    bool errorCapacidad = false;
+    bool errorPrecio = false;
 
     showModalBottomSheet(
       context: context,
@@ -125,7 +133,9 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   color: categoriaSeleccionada == 'padel'
                                       ? AppTheme.accent
                                       : AppTheme.border,
-                                  width: categoriaSeleccionada == 'padel' ? 1.8 : 1,
+                                  width: categoriaSeleccionada == 'padel'
+                                      ? 1.8
+                                      : 1,
                                 ),
                               ),
                               child: Row(
@@ -142,7 +152,8 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   Text(
                                     'Pádel & Canchas',
                                     style: TextStyle(
-                                      fontWeight: categoriaSeleccionada == 'padel'
+                                      fontWeight:
+                                          categoriaSeleccionada == 'padel'
                                           ? FontWeight.w800
                                           : FontWeight.w600,
                                       fontSize: 13,
@@ -169,14 +180,18 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 color: categoriaSeleccionada == 'locales'
-                                    ? AppTheme.partyPurple.withValues(alpha: 0.12)
+                                    ? AppTheme.partyPurple.withValues(
+                                        alpha: 0.12,
+                                      )
                                     : AppTheme.surfaceSubtle,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: categoriaSeleccionada == 'locales'
                                       ? AppTheme.partyPurple
                                       : AppTheme.border,
-                                  width: categoriaSeleccionada == 'locales' ? 1.8 : 1,
+                                  width: categoriaSeleccionada == 'locales'
+                                      ? 1.8
+                                      : 1,
                                 ),
                               ),
                               child: Row(
@@ -193,7 +208,8 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   Text(
                                     'Locales & Eventos',
                                     style: TextStyle(
-                                      fontWeight: categoriaSeleccionada == 'locales'
+                                      fontWeight:
+                                          categoriaSeleccionada == 'locales'
                                           ? FontWeight.w800
                                           : FontWeight.w600,
                                       fontSize: 13,
@@ -213,19 +229,37 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
 
                     TextField(
                       controller: nombreCtrl,
-                      decoration: const InputDecoration(
+                      onChanged: (_) {
+                        if (errorNombre)
+                          setModalState(() => errorNombre = false);
+                      },
+                      decoration: InputDecoration(
                         labelText: 'Nombre *',
                         hintText: 'Ej. Pista 1, Local Principal, etc.',
-                        prefixIcon: Icon(Icons.sports_tennis_rounded, size: 20),
+                        prefixIcon: const Icon(
+                          Icons.sports_tennis_rounded,
+                          size: 20,
+                        ),
+                        // mensaje erroe si se deja sin rellenar
+                        errorText: errorNombre
+                            ? 'El nombre es obligatorio'
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: ubicacionCtrl,
-                      decoration: const InputDecoration(
+                      onChanged: (_) {
+                        if (errorUbicacion)
+                          setModalState(() => errorUbicacion = false);
+                      },
+                      decoration: InputDecoration(
                         labelText: 'Ubicación *',
                         hintText: 'Ej. Zona 1, Planta Baja',
-                        prefixIcon: Icon(Icons.place_outlined, size: 20),
+                        prefixIcon: const Icon(Icons.place_outlined, size: 20),
+                        errorText: errorUbicacion
+                            ? 'La ubicación es obligatoria'
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -245,10 +279,18 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                           child: TextField(
                             controller: capacidadCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
+                            onChanged: (_) {
+                              if (errorCapacidad)
+                                setModalState(() => errorCapacidad = false);
+                            },
+                            decoration: InputDecoration(
                               labelText: 'Capacidad máx *',
                               hintText: '4',
-                              prefixIcon: Icon(Icons.people_outline_rounded, size: 20),
+                              prefixIcon: const Icon(
+                                Icons.people_outline_rounded,
+                                size: 20,
+                              ),
+                              errorText: errorCapacidad ? 'Mínimo 1' : null,
                             ),
                           ),
                         ),
@@ -256,17 +298,142 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                         Expanded(
                           child: TextField(
                             controller: precioCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            onChanged: (_) {
+                              if (errorPrecio)
+                                setModalState(() => errorPrecio = false);
+                            },
+                            decoration: InputDecoration(
                               labelText: 'Precio sesión (€) *',
                               hintText: '20.0',
-                              prefixIcon: Icon(Icons.euro_rounded, size: 20),
+                              prefixIcon: const Icon(
+                                Icons.euro_rounded,
+                                size: 20,
+                              ),
+                              errorText: errorPrecio ? 'Inválido' : null,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+
+                    const SizedBox(height: 16),
+                    if (imagenSeleccionada != null)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.file(
+                              imagenSeleccionada!,
+                              height: 150,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white,
+                              ),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.red.withValues(
+                                  alpha: 0.8,
+                                ),
+                              ),
+                              onPressed: () {
+                                setModalState(() {
+                                  imagenSeleccionada = null;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      InkWell(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 85,
+                          );
+                          if (picked != null) {
+                            setModalState(() {
+                              imagenSeleccionada = File(picked.path);
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.border),
+                          ),
+                          child: Column(
+                            children: const [
+                              Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 28,
+                                color: AppTheme.textSecondary,
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Añadir foto del espacio (Opcional)',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // Banner de error visual dentro del modal
+                    if (errorMsg != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.danger.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppTheme.danger,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                errorMsg!,
+                                style: const TextStyle(
+                                  color: AppTheme.danger,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -277,20 +444,50 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                 final nombre = nombreCtrl.text.trim();
                                 final ubicacion = ubicacionCtrl.text.trim();
                                 final desc = descCtrl.text.trim();
-                                final cap = int.tryParse(capacidadCtrl.text.trim());
-                                final precio = double.tryParse(precioCtrl.text.trim());
+                                final cap = int.tryParse(
+                                  capacidadCtrl.text.trim(),
+                                );
+                                final precio = double.tryParse(
+                                  precioCtrl.text.trim(),
+                                );
 
-                                if (nombre.isEmpty || cap == null || cap <= 0 || precio == null || precio < 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Por favor completa Nombre, Capacidad (>0) y Precio válidos.'),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
+                                final hayErrorNombre = nombre.isEmpty;
+                                final hayErrorUbicacion = ubicacion.isEmpty;
+                                final hayErrorCap = (cap == null || cap <= 0);
+                                final hayErrorPrecio =
+                                    (precio == null || precio < 0);
+
+                                if (hayErrorNombre ||
+                                    hayErrorUbicacion ||
+                                    hayErrorCap ||
+                                    hayErrorPrecio) {
+                                  setModalState(() {
+                                    errorNombre = hayErrorNombre;
+                                    errorUbicacion = hayErrorUbicacion;
+                                    errorCapacidad = hayErrorCap;
+                                    errorPrecio = hayErrorPrecio;
+
+                                    if (hayErrorNombre) {
+                                      errorMsg =
+                                          'Debes introducir el nombre del espacio.';
+                                    } else if (hayErrorUbicacion) {
+                                      errorMsg =
+                                          'Debes indicar la ubicación o sector (ej. Zona 1).';
+                                    } else if (hayErrorCap) {
+                                      errorMsg =
+                                          'La capacidad debe ser un número entero mayor a 0.';
+                                    } else {
+                                      errorMsg =
+                                          'El precio debe ser un número válido.';
+                                    }
+                                  });
                                   return;
                                 }
 
-                                setModalState(() => guardando = true);
+                                setModalState(() {
+                                  errorMsg = null;
+                                  guardando = true;
+                                });
 
                                 final res = await _authService.crearEspacio(
                                   nombre: nombre,
@@ -299,6 +496,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                   capacidadMaxima: cap,
                                   precioPorDia: precio,
                                   categoria: categoriaSeleccionada,
+                                  imagen: imagenSeleccionada,
                                 );
 
                                 setModalState(() => guardando = false);
@@ -308,51 +506,65 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                     Navigator.pop(ctx);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(res['mensaje'] ?? 'Pista registrada con éxito'),
+                                        content: Text(
+                                          res['mensaje'] ??
+                                              'Pista registrada con éxito',
+                                        ),
                                         backgroundColor: AppTheme.accent,
                                         behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
                                       ),
                                     );
                                     _cargarEspacios();
                                   }
                                 } else {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(res['mensaje'] ?? 'Error al registrar la pista'),
-                                        backgroundColor: AppTheme.danger,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                    );
-                                  }
+                                  setModalState(() {
+                                    errorMsg =
+                                        res['mensaje'] ??
+                                        'Error al registrar la pista en el servidor';
+                                  });
                                 }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accent,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: guardando
                             ? const SizedBox(
-                                height: 20,
+                                height: 100,
                                 width: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: const [
-                                  Icon(Icons.check_circle_outline_rounded, size: 18),
-                                  SizedBox(width: 8),
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 18,
+                                  ),
+
                                   Text(
                                     'Publicar Espacio',
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ],
                               ),
                       ),
                     ),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),
@@ -388,7 +600,9 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -408,14 +622,21 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                 ),
                 if (!_cargando)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.surfaceSubtle,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       '${_espacios.length} pistas',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ),
               ],
@@ -440,16 +661,27 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                 ),
                 child: Column(
                   children: const [
-                    Icon(Icons.sports_tennis_rounded, size: 48, color: AppTheme.textMuted),
+                    Icon(
+                      Icons.sports_tennis_rounded,
+                      size: 48,
+                      color: AppTheme.textMuted,
+                    ),
                     SizedBox(height: 14),
                     Text(
                       'No hay pistas registradas aún',
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Usa el botón superior para dar de alta tu primera pista.',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -466,10 +698,20 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                   final ubicacion = (e['ubicacion'] ?? '').toString();
                   final capacidad = e['capacidad_maxima'] ?? '4';
                   final precio = e['precio_por_dia'] ?? '0';
-                  final cat = (e['categoria'] ?? 'padel').toString().toLowerCase();
-                  final bool esLocal = cat == 'locales' || cat == 'local' || cat == 'evento' || cat == 'eventos';
-                  final IconData itemIcon = esLocal ? Icons.celebration_rounded : Icons.sports_tennis_rounded;
-                  final Color itemColor = esLocal ? AppTheme.partyPurple : AppTheme.accent;
+                  final cat = (e['categoria'] ?? 'padel')
+                      .toString()
+                      .toLowerCase();
+                  final bool esLocal =
+                      cat == 'locales' ||
+                      cat == 'local' ||
+                      cat == 'evento' ||
+                      cat == 'eventos';
+                  final IconData itemIcon = esLocal
+                      ? Icons.celebration_rounded
+                      : Icons.sports_tennis_rounded;
+                  final Color itemColor = esLocal
+                      ? AppTheme.partyPurple
+                      : AppTheme.accent;
 
                   return Container(
                     decoration: BoxDecoration(
@@ -488,11 +730,7 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                               color: itemColor.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              itemIcon,
-                              color: itemColor,
-                              size: 22,
-                            ),
+                            child: Icon(itemIcon, color: itemColor, size: 22),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -512,7 +750,10 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: itemColor.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
@@ -531,16 +772,36 @@ class _AdminCrearEventoViewState extends State<AdminCrearEventoView> {
                                 const SizedBox(height: 2),
                                 Text(
                                   ubicacion,
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(Icons.people_outline_rounded, size: 12, color: AppTheme.textMuted),
+                                    const Icon(
+                                      Icons.people_outline_rounded,
+                                      size: 12,
+                                      color: AppTheme.textMuted,
+                                    ),
                                     const SizedBox(width: 3),
-                                    Text('Máx $capacidad', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                                    Text(
+                                      'Máx $capacidad',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.textMuted,
+                                      ),
+                                    ),
                                     const SizedBox(width: 10),
-                                    Text('$precio€ / sesión', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: itemColor)),
+                                    Text(
+                                      '$precio€ / sesión',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: itemColor,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io';
 
 class AuthService {
   // Dirección IP del servidor backend Node.js / Express
-  static const String serverHost = 'http://192.168.1.134:5500';
+  static const String serverHost = 'http://192.168.1.131:5500';
   static const String baseUrl = '$serverHost/api/auth';
   static const String apiUrl = '$serverHost/api';
 
@@ -16,9 +17,7 @@ class AuthService {
   // Token guardado en memoria una vez logueado
   static String? tokenActual;
 
-  // ==========================================
   // AUTENTICACIÓN
-  // ==========================================
 
   // Iniciar sesión
   Future<Map<String, dynamic>> login({
@@ -26,7 +25,7 @@ class AuthService {
     required String password,
   }) async {
     final url = Uri.parse('$baseUrl/login');
-    debugPrint('🔵 [AuthService.login] POST -> $url');
+    debugPrint('[AuthService.login] POST -> $url');
 
     try {
       final response = await http.post(
@@ -36,7 +35,7 @@ class AuthService {
       );
 
       debugPrint(
-        '🟢 [AuthService.login] Status: ${response.statusCode} | Body: ${response.body}',
+        '[AuthService.login] Status: ${response.statusCode} | Body: ${response.body}',
       );
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -56,7 +55,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      debugPrint('🔴 [AuthService.login] Error: $e');
+      debugPrint('[AuthService.login] Error: $e');
       return {
         'success': false,
         'mensaje': 'No se pudo conectar con el servidor: $e',
@@ -73,7 +72,7 @@ class AuthService {
     String rol = 'cliente',
   }) async {
     final url = Uri.parse('$baseUrl/registro');
-    debugPrint('🔵 [AuthService.registro] POST -> $url');
+    debugPrint('[AuthService.registro] POST -> $url');
 
     try {
       final response = await http.post(
@@ -89,7 +88,7 @@ class AuthService {
       );
 
       debugPrint(
-        '🟢 [AuthService.registro] Status: ${response.statusCode} | Body: ${response.body}',
+        '[AuthService.registro] Status: ${response.statusCode} | Body: ${response.body}',
       );
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -106,7 +105,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      debugPrint('🔴 [AuthService.registro] Error: $e');
+      debugPrint('[AuthService.registro] Error: $e');
       return {
         'success': false,
         'mensaje': 'No se pudo conectar con el servidor: $e',
@@ -114,9 +113,7 @@ class AuthService {
     }
   }
 
-  // ==========================================
   // ESPACIOS (SITIOS PARA RESERVAR)
-  // ==========================================
 
   // 1. Obtener todos los espacios
   Future<List<Map<String, dynamic>>> getEspacios() async {
@@ -126,7 +123,7 @@ class AuthService {
     try {
       final response = await http.get(url, headers: _headers);
       debugPrint(
-        '🟢 [AuthService.getEspacios] Status: ${response.statusCode} | Body: ${response.body}',
+        '[AuthService.getEspacios] Status: ${response.statusCode} | Body: ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -134,22 +131,22 @@ class AuthService {
         if (data['success'] == true && data['espacios'] != null) {
           final list = List<Map<String, dynamic>>.from(data['espacios']);
           debugPrint(
-            '✅ [AuthService.getEspacios] Se han cargado ${list.length} espacios',
+            '[AuthService.getEspacios] Se han cargado ${list.length} espacios',
           );
           return list;
         }
       } else {
         debugPrint(
-          '⚠️ [AuthService.getEspacios] Respuesta no exitosa: ${response.statusCode}',
+          '[AuthService.getEspacios] Respuesta no exitosa: ${response.statusCode}',
         );
       }
     } catch (e) {
-      debugPrint('🔴 [AuthService.getEspacios] Excepción: $e');
+      debugPrint('[AuthService.getEspacios] Excepción: $e');
     }
     return [];
   }
 
-  // 2. Crear un nuevo espacio (Para Admin)
+  // 2. Crear un nuevo evento/ espacio
   Future<Map<String, dynamic>> crearEspacio({
     required String nombre,
     required String descripcion,
@@ -158,35 +155,33 @@ class AuthService {
     required double precioPorDia,
     String categoria = 'padel',
     String estado = 'disponible',
+    File? imagen,
   }) async {
     final url = Uri.parse('$apiUrl/espacios');
-    final body = {
-      'nombre': nombre,
-      'descripcion': descripcion,
-      'ubicacion': ubicacion,
-      'capacidad_maxima': capacidadMaxima,
-      'precio_por_dia': precioPorDia,
-      'categoria': categoria,
-      'estado': estado,
-    };
-    debugPrint(
-      '🔵 [AuthService.crearEspacio] POST -> $url | Body: ${jsonEncode(body)}',
-    );
-
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode(body),
-      );
-
-      debugPrint(
-        '🟢 [AuthService.crearEspacio] Status: ${response.statusCode} | Body: ${response.body}',
-      );
-      final data = jsonDecode(response.body);
-      return data;
+      
+      final request = http.MultipartRequest('POST', url);
+     
+      request.fields['nombre'] = nombre;
+      request.fields['descripcion'] = descripcion;
+      request.fields['ubicacion'] = ubicacion;
+      request.fields['capacidad_maxima'] = capacidadMaxima.toString();
+      request.fields['precio_por_dia'] = precioPorDia.toString();
+      request.fields['categoria'] = categoria;
+      request.fields['estado'] = estado;
+      
+      
+      if (imagen != null && await imagen.exists()) {
+        request.files.add(
+          await http.MultipartFile.fromPath('imagen', imagen.path),
+        );
+      }
+      // 5. Enviar y recibir respuesta
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
     } catch (e) {
-      debugPrint('🔴 [AuthService.crearEspacio] Excepción: $e');
+      debugPrint('[AuthService.crearEspacio] Excepción: $e');
       return {
         'success': false,
         'mensaje': 'Error de conexión al crear espacio: $e',
@@ -194,9 +189,7 @@ class AuthService {
     }
   }
 
-  // ==========================================
   // RESERVAS (fecha YYYY-MM-DD y franja_horaria)
-  // ==========================================
 
   // 1. Obtener reservas reales (soporta evento_id y usuario_id)
   Future<List<Map<String, dynamic>>> getReservas({
@@ -218,7 +211,7 @@ class AuthService {
     try {
       final response = await http.get(uri, headers: _headers);
       debugPrint(
-        '🟢 [AuthService.getReservas] Status: ${response.statusCode} | Body: ${response.body}',
+        '[AuthService.getReservas] Status: ${response.statusCode} | Body: ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -226,17 +219,17 @@ class AuthService {
         if (data['success'] == true && data['reservas'] != null) {
           final list = List<Map<String, dynamic>>.from(data['reservas']);
           debugPrint(
-            '✅ [AuthService.getReservas] Se han cargado ${list.length} reservas',
+            '[AuthService.getReservas] Se han cargado ${list.length} reservas',
           );
           return list;
         }
       } else {
         debugPrint(
-          '⚠️ [AuthService.getReservas] Respuesta no exitosa: ${response.statusCode}',
+          '[AuthService.getReservas] Respuesta no exitosa: ${response.statusCode}',
         );
       }
     } catch (e) {
-      debugPrint('🔴 [AuthService.getReservas] Excepción: $e');
+      debugPrint('[AuthService.getReservas] Excepción: $e');
     }
     return [];
   }

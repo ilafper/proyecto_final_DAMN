@@ -442,6 +442,7 @@ class _UserScreenState extends State<UserScreen> {
                               ),
                             ),
                           ),
+                          
                           const SizedBox(height: 14),
 
                           // Atajos rápidos estilo chip sobre el banner
@@ -648,7 +649,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  // Tarjeta de Espacio Limpia y Moderna con Datos Reales
+  // Tarjeta de Espacio con Fotografía Real (Estilo Playtomic, sin datos inventados)
   Widget _buildVenueCard(Map<String, dynamic> e) {
     final nombre = e['nombre'] ?? 'Espacio';
     final ubicacion = (e['ubicacion'] ?? 'Ubicación céntrica')
@@ -663,74 +664,186 @@ class _UserScreenState extends State<UserScreen> {
     final IconData icon = visual['icon'] as IconData;
     final Color color = visual['color'] as Color;
 
+    final String? rawImg = e['imagen_url']?.toString().trim();
+    final bool tieneFoto = rawImg != null && rawImg.isNotEmpty && rawImg.startsWith('http');
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppTheme.border, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           onTap: () => _abrirModalReserva(e),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Fila Superior: Badge de Categoría a la izquierda y Precio a la derecha
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- 1. CABECERA CON FOTO REAL O BANNER VISUAL ---
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(21),
+                    ),
+                    child: tieneFoto
+                        ? Image.network(
+                            rawImg,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) {
+                              return Container(
+                                height: 160,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      color.withValues(alpha: 0.8),
+                                      color,
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    icon,
+                                    size: 54,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              );
+                            },
+                            loadingBuilder: (ctx, child, progress) {
+                              if (progress == null) return child;
+                              return Container(
+                                height: 180,
+                                color: AppTheme.surfaceSubtle,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppTheme.accent,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  color.withValues(alpha: 0.7),
+                                  color,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                icon,
+                                size: 48,
+                                color: Colors.white.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                  ),
+
+                  // Sombra / Gradiente sobre la foto para contraste
+                  if (tieneFoto)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(21),
+                          ),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withValues(alpha: 0.35),
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.45),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Badge de Categoría (Arriba a la izquierda)
+                  Positioned(
+                    top: 14,
+                    left: 14,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
+                        color: color,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: color.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(icon, color: color, size: 14),
+                          Icon(icon, color: Colors.white, size: 14),
                           const SizedBox(width: 5),
                           Text(
                             tag,
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 11,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
+                              letterSpacing: 0.6,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Container(
+                  ),
+
+                  // Precio flotante sobre la foto (Abajo a la derecha)
+                  Positioned(
+                    bottom: 12,
+                    right: 14,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
+                        horizontal: 12,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceSubtle,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.border),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: RichText(
                         text: TextSpan(
@@ -738,7 +851,7 @@ class _UserScreenState extends State<UserScreen> {
                             TextSpan(
                               text: '$precio€',
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 color: AppTheme.textPrimary,
                                 fontFamily: 'Plus Jakarta Sans',
@@ -757,106 +870,110 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Nombre del Espacio / Pista
-                Text(
-                  nombre,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Ubicación Real
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.place_outlined,
-                      size: 15,
-                      color: AppTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        ubicacion,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Descripción (solo si el admin la añadió)
-                if (desc.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    desc,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                    ),
                   ),
                 ],
+              ),
 
-                const SizedBox(height: 14),
-
-                // Único Chip con datos reales de la BD: Capacidad
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+              // --- 2. CONTENIDO Y DETALLES DEL LUGAR ---
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFeatureChip(
-                      Icons.people_outline_rounded,
-                      'Hasta $capacidad pers',
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Botón de Reserva
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () => _abrirModalReserva(e),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: color,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    Text(
+                      nombre,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: -0.4,
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.calendar_month_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Consultar Fechas y Reservar',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.place_outlined,
+                          size: 15,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            ubicacion,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                  ),
+
+                    if (desc.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        desc,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 14),
+
+                    // Chips de características (ÚNICAMENTE DATOS REALES DE LA BD)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _buildFeatureChip(
+                          Icons.people_outline_rounded,
+                          'Hasta $capacidad pers',
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Botón de Reserva Vívido
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton(
+                        onPressed: () => _abrirModalReserva(e),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: color,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.calendar_month_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Consultar Fechas y Reservar',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
